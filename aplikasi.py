@@ -130,7 +130,7 @@ if raw_prompt := st.chat_input("Ketik keluhan kerusakan (Contoh: TV Sharp LED su
             with st.spinner("Menganalisis skema & gejala kerusakan..."):
                 try:
                     response = client.chat.completions.create(
-                        model="gpt-4o-mini",
+                        model="gpt-5-mini",
                         messages=st.session_state.messages
                     )
                     jawaban = response.choices[0].message.content
