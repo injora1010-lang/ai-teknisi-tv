@@ -63,7 +63,12 @@ st.caption("Sistem Pakar Diagnosa Kerusakan TV LED, LCD, OLED, Plasma, & TV Tabu
 # -----------------------------------------------------------------------------
 # 2. INISIALISASI OPENAI CLIENT
 # -----------------------------------------------------------------------------
-client = OpenAI()
+api_key = st.secrets["OPENAI_API_KEY"]
+
+# Bersihkan karakter tersembunyi
+api_key = api_key.encode("ascii", errors="ignore").decode("ascii").strip()
+
+client = OpenAI(api_key=api_key)
 
 # -----------------------------------------------------------------------------
 # 3. SYSTEM PROMPT (INSTRUKSI AI TEKNISI)
