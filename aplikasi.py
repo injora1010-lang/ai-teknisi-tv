@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 from openai import OpenAI
 
@@ -79,11 +80,14 @@ for msg in st.session_state.messages:
             st.markdown(msg["content"])
 
 # 6. Input Pesan Pengguna
-if prompt := st.chat_input("Ketik keluhan kerusakan (misal: TV LG LED gambar gelap suara ada)..."):
-    with st.chat_message("user", avatar="user"):
-        st.markdown(prompt)
+if raw_prompt := st.chat_input("Ketik keluhan kerusakan (misal: TV LG LED gambar gelap suara ada)..."):
+    # Pembersihan karakter Unicode tersembunyi / invisible chars
+    clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', raw_prompt)
     
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user", avatar="user"):
+        st.markdown(clean_prompt)
+    
+    st.session_state.messages.append({"role": "user", "content": clean_prompt})
 
     with st.chat_message("assistant", avatar="assistant"):
         with st.spinner("Menganalisis kerusakan..."):
