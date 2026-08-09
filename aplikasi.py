@@ -1,30 +1,22 @@
 import streamlit as st
 from openai import OpenAI
 
-# 1. Konfigurasi Tampilan Halaman
-st.set_page_config(page_title="AI Teknisi Service TV", page_icon="🔧")
+# 1. Konfigurasi Tampilan Halaman & Sembunyikan Elemen Default Streamlit
+st.set_page_config(
+    page_title="AI Teknisi Service TV", 
+    page_icon="🔧",
+    initial_sidebar_state="collapsed"
+)
 
-# CSS Kustom untuk Menampilkan Footer Copyright di Bawah
+# Menghilangkan elemen default Streamlit (Header GitHub, Footer Snowflake, dll)
 st.markdown(
     """
     <style>
-    .footer {
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        background-color: #0e1117;
-        color: #888888;
-        text-align: center;
-        padding: 10px;
-        font-size: 14px;
-        border-top: 1px solid #262730;
-        z-index: 100;
-    }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stAppDeployButton {display:none;}
     </style>
-    <div class="footer">
-        <p>© 2026 <b>Rasmuhammad</b>. All Rights Reserved | AI Teknisi Service TV</p>
-    </div>
     """,
     unsafe_allow_html=True
 )
@@ -35,7 +27,7 @@ st.caption("Siap membantu diagnosa kerusakan TV LED, LCD, Tabung, dan Smart TV")
 # 2. Inisialisasi OpenAI Client
 client = OpenAI()
 
-# 3. Inisialisasi Memori Percakapan (Session State)
+# 3. Inisialisasi Memori Percakapan
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {
@@ -53,7 +45,7 @@ if "messages" not in st.session_state:
         }
     ]
 
-# Sidebar Menu & Reset
+# 4. Sidebar Pengaturan & Copyright
 st.sidebar.title("⚙️ Pengaturan")
 st.sidebar.write("Pengembang: **Rasmuhammad**")
 
@@ -61,14 +53,17 @@ if st.sidebar.button("🔄 Reset Diagnosa"):
     st.session_state.messages = [st.session_state.messages[0]]
     st.rerun()
 
-# 4. Tampilkan Riwayat Chat (Abaikan System Prompt)
+st.sidebar.markdown("---")
+st.sidebar.caption("© 2026 **Rasmuhammad**\n\nAll Rights Reserved | AI Teknisi Service TV")
+
+# 5. Tampilkan Riwayat Chat
 for msg in st.session_state.messages:
     if msg["role"] != "system":
         avatar = "👨‍🔧" if msg["role"] == "user" else "🤖"
         with st.chat_message(msg["role"], avatar=avatar):
             st.markdown(msg["content"])
 
-# 5. Input Pesan Pengguna
+# 6. Input Pesan Pengguna
 if prompt := st.chat_input("Ketik keluhan kerusakan (misal: TV LG LED gambar gelap suara ada)..."):
     with st.chat_message("user", avatar="👨‍🔧"):
         st.markdown(prompt)
@@ -88,3 +83,4 @@ if prompt := st.chat_input("Ketik keluhan kerusakan (misal: TV LG LED gambar gel
                 st.session_state.messages.append({"role": "assistant", "content": jawaban})
             except Exception as e:
                 st.error(f"Terjadi kesalahan: {e}")
+
