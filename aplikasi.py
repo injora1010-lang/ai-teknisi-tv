@@ -1,22 +1,43 @@
 import streamlit as st
 from openai import OpenAI
 
-# 1. Konfigurasi Tampilan Halaman & Sembunyikan Elemen Default Streamlit
+# 1. Konfigurasi Tampilan Halaman
 st.set_page_config(
     page_title="AI Teknisi Service TV", 
     page_icon="🔧",
     initial_sidebar_state="collapsed"
 )
 
-# Menghilangkan elemen default Streamlit (Header GitHub, Footer Snowflake, dll)
+# Style CSS: Sembunyikan tombol/menu bawaan Streamlit & buat footer khusus yang rapi
 st.markdown(
     """
     <style>
     #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
     .stAppDeployButton {display:none;}
+    
+    /* Beri jarak bawah agar isi chat tidak tertutup footer */
+    .block-container {
+        padding-bottom: 70px;
+    }
+    
+    /* Tampilan Footer Copyright kustom */
+    .custom-footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #0e1117;
+        color: #888888;
+        text-align: center;
+        padding: 8px;
+        font-size: 12px;
+        border-top: 1px solid #262730;
+        z-index: 99;
+    }
     </style>
+    <div class="custom-footer">
+        © 2026 <b>Rasmuhammad</b>. All Rights Reserved | AI Teknisi Service TV
+    </div>
     """,
     unsafe_allow_html=True
 )
@@ -45,16 +66,13 @@ if "messages" not in st.session_state:
         }
     ]
 
-# 4. Sidebar Pengaturan & Copyright
+# 4. Sidebar Pengaturan
 st.sidebar.title("⚙️ Pengaturan")
 st.sidebar.write("Pengembang: **Rasmuhammad**")
 
 if st.sidebar.button("🔄 Reset Diagnosa"):
     st.session_state.messages = [st.session_state.messages[0]]
     st.rerun()
-
-st.sidebar.markdown("---")
-st.sidebar.caption("© 2026 **Rasmuhammad**\n\nAll Rights Reserved | AI Teknisi Service TV")
 
 # 5. Tampilkan Riwayat Chat
 for msg in st.session_state.messages:
@@ -83,4 +101,3 @@ if prompt := st.chat_input("Ketik keluhan kerusakan (misal: TV LG LED gambar gel
                 st.session_state.messages.append({"role": "assistant", "content": jawaban})
             except Exception as e:
                 st.error(f"Terjadi kesalahan: {e}")
-
