@@ -196,32 +196,32 @@ if prompt_data:
  
        st.session_state.messages.append({"role": "user", "content": clean_prompt})
 
-        # Proses jawaban AI
-        with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Menganalisis pertanyaan dan gambar..."):
-                try:
-                    # Salin riwayat chat untuk dikirim ke AI
-                    messages_for_api = st.session_state.messages.copy()
+           # Proses jawaban AI
+           with st.chat_message("assistant", avatar="🤖"):
+               with st.spinner("Menganalisis pertanyaan dan gambar..."):
+                   try:
+                       # Salin riwayat chat untuk dikirim ke AI
+                       messages_for_api = st.session_state.messages.copy()
 
-                    # Jika ada gambar, kirim gambar + pertanyaan
-                    if uploaded_files:
-                       uploaded_image = uploaded_files[0]
+                       # Jika ada gambar, kirim gambar + pertanyaan
+                       if uploaded_files:
+                          uploaded_image = uploaded_files[0]
 
-                       image_bytes = uploaded_image.getvalue()
-                       image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+                         image_bytes = uploaded_image.getvalue()
+                         image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
-                       image_type = uploaded_image.type
+                           image_type = uploaded_image.type
 
-                       messages_for_api[-1] = {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "text",
-                                    "text": clean_prompt
-                                },
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
+                          messages_for_api[-1] = {
+                               "role": "user",
+                               "content": [
+                                   {
+                                       "type": "text",
+                                       "text": clean_prompt
+                                    },
+                                    {
+                                       "type": "image_url",
+                                       "image_url": {
                                         "url": f"data:{image_type};base64,{image_base64}"
                                     }
                                 }
