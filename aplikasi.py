@@ -175,7 +175,8 @@ for msg in st.session_state.messages:
     prompt_data = st.chat_input(
      	"ketik keluhan kerusakan...",
      	accept_file=True,
-     	file_type=["jpg", "jpeg", "png"]
+     	file_type=["jpg", "jpeg", "png"],
+        key="chat_input_main"
     )
     if prompt_data:
         raw_prompt = prompt_data.text
@@ -203,7 +204,7 @@ for msg in st.session_state.messages:
                     messages_for_api = st.session_state.messages.copy()
 
                     # Jika ada gambar, kirim gambar + pertanyaan
-                    if uploaded_file:
+                    if uploaded_files:
                        uploaded_image = uploaded_files[0]
 
                        image_bytes = uploaded_image.getvalue()
