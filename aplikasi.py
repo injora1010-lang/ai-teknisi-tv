@@ -172,18 +172,18 @@ for msg in st.session_state.messages:
 # -----------------------------------------------------------------------------
 # 6. INPUT USER & SANITASI TEKS (KEAMANAN DARI EROR ASCII/WORD)
 # -----------------------------------------------------------------------------
-prompt_data = st.chat_input(
-     "ketik keluhan kerusakan...",
-     accept_file=True,
-     file_type=["jpg", "jpeg", "png"]
-)
-if prompt_data:
-     raw_prompt = prompt_data.text
-     uploaded_files = prompt_data.files
+    prompt_data = st.chat_input(
+     	"ketik keluhan kerusakan...",
+     	accept_file=True,
+     	file_type=["jpg", "jpeg", "png"]
+    )
+    if prompt_data:
+        raw_prompt = prompt_data.text
+        uploaded_files = prompt_data.files
 
     # A. Saring & buang karakter non-ASCII tersembunyi (\u200e dll)
     clean_prompt = raw_prompt.encode("ascii", errors="ignore").decode("ascii")
-    
+ 
     # B. Pembersihan ekstra dengan Regex untuk karakter formatting
     clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
 
