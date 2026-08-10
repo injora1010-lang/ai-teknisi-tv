@@ -178,23 +178,23 @@ prompt_data = st.chat_input(
     file_type=["jpg", "jpeg", "png"],
     key="chat_input_main"
 )
-    if prompt_data:
-        raw_prompt = prompt_data.text
-        uploaded_files = prompt_data.files
+if prompt_data:
+   raw_prompt = prompt_data.text
+   uploaded_files = prompt_data.files
 
-        # A. Saring & buang karakter non-ASCII tersembunyi (\u200e dll)
-        clean_prompt = raw_prompt.encode("ascii", errors="ignore").decode("ascii")
+      # A. Saring & buang karakter non-ASCII tersembunyi (\u200e dll)
+      clean_prompt = raw_prompt.encode("ascii", errors="ignore").decode("ascii")
  
-        # B. Pembersihan ekstra dengan Regex untuk karakter formatting
-        clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
+      # B. Pembersihan ekstra dengan Regex untuk karakter formatting
+      clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
 
-        # C. Jika setelah dibersihkan teks tidak kosong
-        if clean_prompt:
-            # Tampilkan pesan user
-            with st.chat_message("user", avatar="👤"):
-                 st.markdown(clean_prompt)
+      # C. Jika setelah dibersihkan teks tidak kosong
+      if clean_prompt:
+        # Tampilkan pesan user
+        with st.chat_message("user", avatar="👤"):
+             st.markdown(clean_prompt)
         
-            st.session_state.messages.append({"role": "user", "content": clean_prompt})
+             st.session_state.messages.append({"role": "user", "content": clean_prompt})
 
         # Proses jawaban AI
         with st.chat_message("assistant", avatar="🤖"):
