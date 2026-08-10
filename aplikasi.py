@@ -1,5 +1,6 @@
 import re
 import os
+import base64
 import streamlit as st
 from openai import OpenAI
 
@@ -191,16 +192,47 @@ if raw_prompt := st.chat_input("Ketik keluhan kerusakan (Contoh: TV Sharp LED su
 
         # Proses jawaban AI
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Menganalisis skema & gejala kerusakan..."):
+            with st.spinner("Menganalisis pertanyaan dan gambar..."):
                 try:
+                    # Salin riwayat chat untuk dikirim ke AI
+                    messages_for_api = st.session_state.messages.copy()
+
+                    # Jika ada gambar, kirim gambar + pertanyaan
+                    if uploaded_image is not None:
+                        image_bytes = uploaded_image.getvalue()
+                        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+
+                        image_type = uploaded_image.type
+
+                        messages_for_api[-1] = {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": clean_prompt
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:{image_type};base64,{image_base64}"
+                                    }
+                                }
+                            ]
+                        }
+
                     response = client.chat.completions.create(
                         model="gpt-4o-mini",
-                        messages=st.session_state.messages
+                        messages=messages_for_api
                     )
+
                     jawaban = response.choices[0].message.content
-                    
+
                     st.markdown(jawaban)
-                    st.session_state.messages.append({"role": "assistant", "content": jawaban})
-                    
+
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": jawaban
+                    })
+
                 except Exception as e:
                     st.error(f"Terjadi kesalahan pada sistem: {e}")
