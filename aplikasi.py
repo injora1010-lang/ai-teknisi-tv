@@ -172,7 +172,9 @@ for msg in st.session_state.messages:
 # -----------------------------------------------------------------------------
 # 6. INPUT USER & SANITASI TEKS (KEAMANAN DARI EROR ASCII/WORD)
 # -----------------------------------------------------------------------------
-uploaded_image = st.file_uploader("📷 Upload foto board/komponen", type=["jpg", "jpeg", "png"],label_visibility="collapsed")
+uploaded_image = st.file_uploader("📷 Upload foto board/komponen", type=["jpg", "jpeg", "png"],label_visibility="collapsed", key="tv_image")
+
+if uploaded_image is not None: st.image(uploades_image, caption="📷 Foto siap dianalisis", use_container_width=True)
 
 if raw_prompt := st.chat_input("Ketik keluhan kerusakan (Contoh: TV Sharp LED suara ada gambar gelap)..."):
     
