@@ -242,5 +242,5 @@ if prompt_data:
                           "content": jawaban
                        })
 
-                       except Exception as e:
-                           st.error(f"Terjadi kesalahan pada sistem: {e}")
+                    except Exception as e:
+                        st.error(f"Terjadi kesalahan pada sistem: {e}")
