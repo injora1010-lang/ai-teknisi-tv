@@ -65,8 +65,6 @@ st.caption("Sistem Pakar Diagnosa Kerusakan TV LED, LCD, OLED, Plasma, & TV Tabu
 # 2. INISIALISASI OPENAI CLIENT
 # -----------------------------------------------------------------------------
 api_key = st.secrets["OPENAI_API_KEY"]
-
-# Bersihkan karakter tersembunyi
 api_key = api_key.encode("ascii", errors="ignore").decode("ascii").strip()
 
 client = OpenAI(api_key=api_key)
@@ -134,16 +132,19 @@ with st.sidebar:
         st.rerun()
 
 # -----------------------------------------------------------------------------
-# 5. RIWAYAT CHAT
+# 5. MERENDER RIWAYAT CHAT (DENGAN TAMPILAN GAMBAR)
 # -----------------------------------------------------------------------------
 for msg in st.session_state.messages:
     if msg["role"] != "system":
         avatar_icon = "👤" if msg["role"] == "user" else "🤖"
         with st.chat_message(msg["role"], avatar=avatar_icon):
+            # Tampilkan gambar jika ada di dalam riwayat pesan
+            if "image" in msg and msg["image"]:
+                st.image(msg["image"], use_column_width=True)
             st.markdown(msg["content"])
 
 # -----------------------------------------------------------------------------
-# 6. INPUT USER & SANITASI TEKS
+# 6. INPUT USER & PROSES AI
 # -----------------------------------------------------------------------------
 prompt_data = st.chat_input(
     "ketik keluhan kerusakan...",
@@ -156,48 +157,68 @@ if prompt_data:
     raw_prompt = prompt_data.text
     uploaded_files = prompt_data.files
 
-    # A. Saring & buang karakter non-ASCII tersembunyi
+    # A. Sanitasi teks
     clean_prompt = raw_prompt.encode("ascii", errors="ignore").decode("ascii")
     clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
 
     if clean_prompt or uploaded_files:
-        # Jika teks kosong tapi ada gambar, beri deskripsi default
         display_text = clean_prompt if clean_prompt else "[Mengirim Gambar]"
+        image_bytes_data = None
+        image_type = None
 
-        # Tampilkan pesan user
+        # B. Olah gambar jika user mengunggah foto
+        if uploaded_files:
+            uploaded_image = uploaded_files[0]
+            image_bytes_data = uploaded_image.getvalue()
+            image_type = uploaded_image.type
+
+        # C. Tampilkan pesan user di UI secara langsung
         with st.chat_message("user", avatar="👤"):
+            if image_bytes_data:
+                st.image(image_bytes_data, use_column_width=True)
             st.markdown(display_text)
 
-        st.session_state.messages.append({"role": "user", "content": display_text})
+        # D. Simpan ke session state (Teks + Gambar)
+        st.session_state.messages.append({
+            "role": "user",
+            "content": display_text,
+            "image": image_bytes_data,
+            "image_type": image_type
+        })
 
-        # Proses jawaban AI
+        # E. Kirim ke AI & Tampilkan Jawaban
         with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("Menganalisis pertanyaan dan gambar..."):
                 try:
-                    messages_for_api = st.session_state.messages.copy()
-
-                    # Jika ada gambar yang diupload
-                    if uploaded_files:
-                        uploaded_image = uploaded_files[0]
-                        image_bytes = uploaded_image.getvalue()
-                        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
-                        image_type = uploaded_image.type
-
-                        messages_for_api[-1] = {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "text",
-                                    "text": display_text
-                                },
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:{image_type};base64,{image_base64}"
-                                    }
-                                }
-                            ]
-                        }
+                    # Susun payload pesan untuk OpenAI API
+                    messages_for_api = []
+                    
+                    # Hitung batas hemat token (Maksimal 3 foto terakhir yang dikirim ulang)
+                    total_messages = len(st.session_state.messages)
+                    
+                    for idx, msg in enumerate(st.session_state.messages):
+                        if msg["role"] == "system":
+                            messages_for_api.append({"role": "system", "content": msg["content"]})
+                        elif msg["role"] == "assistant":
+                            messages_for_api.append({"role": "assistant", "content": msg["content"]})
+                        elif msg["role"] == "user":
+                            # Cek apakah pesan user punya gambar dan berada di dalam batas 3 foto terakhir
+                            if msg.get("image") and (total_messages - idx <= 6):
+                                image_base64 = base64.b64encode(msg["image"]).decode("utf-8")
+                                messages_for_api.append({
+                                    "role": "user",
+                                    "content": [
+                                        {"type": "text", "text": msg["content"]},
+                                        {
+                                            "type": "image_url",
+                                            "image_url": {
+                                                "url": f"data:{msg['image_type']};base64,{image_base64}"
+                                            }
+                                        }
+                                    ]
+                                })
+                            else:
+                                messages_for_api.append({"role": "user", "content": msg["content"]})
 
                     response = client.chat.completions.create(
                         model="gpt-4o-mini",
@@ -205,7 +226,6 @@ if prompt_data:
                     )
 
                     jawaban = response.choices[0].message.content
-
                     st.markdown(jawaban)
 
                     st.session_state.messages.append({
