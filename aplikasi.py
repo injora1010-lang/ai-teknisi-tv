@@ -204,14 +204,14 @@ for msg in st.session_state.messages:
 
                     # Jika ada gambar, kirim gambar + pertanyaan
                     if uploaded_file:
-						uploaded_image = uploaded_files[0]
+                       uploaded_image = uploaded_files[0]
 
-                        image_bytes = uploaded_image.getvalue()
-                        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+                       image_bytes = uploaded_image.getvalue()
+                       image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
-                        image_type = uploaded_image.type
+                       image_type = uploaded_image.type
 
-                        messages_for_api[-1] = {
+                       messages_for_api[-1] = {
                             "role": "user",
                             "content": [
                                 {
