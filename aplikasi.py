@@ -172,12 +172,12 @@ for msg in st.session_state.messages:
 # -----------------------------------------------------------------------------
 # 6. INPUT USER & SANITASI TEKS (KEAMANAN DARI EROR ASCII/WORD)
 # -----------------------------------------------------------------------------
-uploaded_image = st.file_uploader("📷 Upload foto board/komponen", type=["jpg", "jpeg", "png"],label_visibility="collapsed", key="tv_image")
+prompt_data = st.chat_input("ketik keluhan kerusakan..."), accept_file=True, file_type=["jpg", "jpeg", "png"]
 
-if uploaded_image is not None: st.image(uploades_image, caption="📷 Foto siap dianalisis", use_container_width=True)
+if prompt_data:
+	 raw_prompt = prompt_data.text
+	 uploaded_files = prompt_data.files
 
-if raw_prompt := st.chat_input("Ketik keluhan kerusakan (Contoh: TV Sharp LED suara ada gambar gelap)..."):
-    
     # A. Saring & buang karakter non-ASCII tersembunyi (\u200e dll)
     clean_prompt = raw_prompt.encode('ascii', errors='ignore').decode('ascii')
     
@@ -200,7 +200,9 @@ if raw_prompt := st.chat_input("Ketik keluhan kerusakan (Contoh: TV Sharp LED su
                     messages_for_api = st.session_state.messages.copy()
 
                     # Jika ada gambar, kirim gambar + pertanyaan
-                    if uploaded_image is not None:
+                    if uploaded_file:
+			uploaded_image = uploaded_files[0]
+
                         image_bytes = uploaded_image.getvalue()
                         image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
