@@ -188,12 +188,12 @@ for msg in st.session_state.messages:
         clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
 
         # C. Jika setelah dibersihkan teks tidak kosong
-    if clean_prompt:
-        # Tampilkan pesan user
-        with st.chat_message("user", avatar="👤"):
-            st.markdown(clean_prompt)
+        if clean_prompt:
+            # Tampilkan pesan user
+            with st.chat_message("user", avatar="👤"):
+                 st.markdown(clean_prompt)
         
-        st.session_state.messages.append({"role": "user", "content": clean_prompt})
+            st.session_state.messages.append({"role": "user", "content": clean_prompt})
 
         # Proses jawaban AI
         with st.chat_message("assistant", avatar="🤖"):
