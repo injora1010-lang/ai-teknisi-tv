@@ -216,31 +216,31 @@ if prompt_data:
                               "role": "user",
                               "content": [
                                    {
-                                       "type": "text",
-                                       "text": clean_prompt
+                                     "type": "text",
+                                     "text": clean_prompt
                                     },
                                     {
-                                       "type": "image_url",
-                                       "image_url": {
+                                        "type": "image_url",
+                                        "image_url": {
                                         "url": f"data:{image_type};base64,{image_base64}"
-                                    }
-                                }
-                            ]
-                        }
+                                        }
+                                     }
+                               ]
+                           }
 
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=messages_for_api
-                    )
+                       response = client.chat.completions.create(
+                           model="gpt-4o-mini",
+                           messages=messages_for_api
+                       )
 
-                    jawaban = response.choices[0].message.content
+                       jawaban = response.choices[0].message.content
 
-                    st.markdown(jawaban)
+                       st.markdown(jawaban)
 
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": jawaban
-                    })
+                       st.session_state.messages.append({
+                          "role": "assistant",
+                          "content": jawaban
+                       })
 
-                except Exception as e:
-                    st.error(f"Terjadi kesalahan pada sistem: {e}")
+                       except Exception as e:
+                           st.error(f"Terjadi kesalahan pada sistem: {e}")
