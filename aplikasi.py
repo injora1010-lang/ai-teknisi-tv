@@ -194,7 +194,7 @@ if prompt_data:
        with st.chat_message("user", avatar="👤"):
            st.markdown(clean_prompt)
  
-       st.session_state.messages.append({"role": "user", "content": clean_prompt})
+           st.session_state.messages.append({"role": "user", "content": clean_prompt})
 
            # Proses jawaban AI
            with st.chat_message("assistant", avatar="🤖"):
@@ -207,14 +207,14 @@ if prompt_data:
                        if uploaded_files:
                           uploaded_image = uploaded_files[0]
 
-                         image_bytes = uploaded_image.getvalue()
-                         image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+                          image_bytes = uploaded_image.getvalue()
+                          image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
-                           image_type = uploaded_image.type
+                          image_type = uploaded_image.type
 
                           messages_for_api[-1] = {
-                               "role": "user",
-                               "content": [
+                              "role": "user",
+                              "content": [
                                    {
                                        "type": "text",
                                        "text": clean_prompt
