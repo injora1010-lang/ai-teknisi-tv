@@ -171,6 +171,8 @@ for msg in st.session_state.messages:
 # -----------------------------------------------------------------------------
 # 6. INPUT USER & SANITASI TEKS (KEAMANAN DARI EROR ASCII/WORD)
 # -----------------------------------------------------------------------------
+uploaded_image = st.file_uploader("📷 Upload foto board/komponen", type=["jpg", "jpeg", "png"],label_visibility="collapsed")
+
 if raw_prompt := st.chat_input("Ketik keluhan kerusakan (Contoh: TV Sharp LED suara ada gambar gelap)..."):
     
     # A. Saring & buang karakter non-ASCII tersembunyi (\u200e dll)
