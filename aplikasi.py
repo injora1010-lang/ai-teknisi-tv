@@ -134,7 +134,8 @@ ATURAN UTAMA:
     Jika masalah kompleks, lakukan analisis lebih mendalam.
 
 Tujuan utama kamu adalah menjadi partner berpikir seorang teknisi,
-bukan sekadar mesin pencari data atau pembaca datasheet.
+bukan sekadar mesin pencari data atau pembaca datasheet."""
+
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "system", "content": SYSTEM_PROMPT}
