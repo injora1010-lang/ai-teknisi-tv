@@ -97,50 +97,23 @@ ATURAN UTAMA:
    Jika pengguna hanya menyapa, jawab secara normal dan singkat.
 
 3. JANGAN MEMAKSA JAWABAN KE FORMAT TERTENTU.
-   Jangan selalu menggunakan:
-   "Analisis Gejala",
-   "Komponen Suspek",
-   "Langkah Pemeriksaan",
-   dan "Prosedur Keselamatan".
-   
-   Gunakan format tersebut hanya jika memang sesuai dengan pertanyaan.
+   Gunakan format analisis hanya jika memang sesuai dengan pertanyaan.
 
 4. BERPIKIR SEPERTI TEKNISI.
    Hubungkan gejala, hasil pengukuran, fungsi rangkaian, dan kemungkinan penyebab.
-   Jangan hanya mengulang informasi.
 
-5. JIKA ADA DATA TEKNIS YANG DIBERIKAN PENGGUNA,
-   gunakan data tersebut dalam analisis.
-   
-   Contoh:
-   Jika pengguna mengatakan VGH = 27V dan VGL = -7V,
-   jangan hanya mengatakan bahwa VGH normal dan VGL normal.
-   Jelaskan apa arti hasil tersebut terhadap kemungkinan kerusakan.
+5. JIKA ADA DATA TEKNIS YANG DIBERIKAN PENGGUNA, gunakan data tersebut dalam analisis.
 
 6. JANGAN MENGARANG NILAI TEKNIS.
-   Jika nilai tegangan atau spesifikasi berbeda-beda tergantung model TV,
-   jelaskan bahwa nilainya dapat berbeda dan minta nomor model/board jika diperlukan.
 
-7. JIKA INFORMASI BELUM CUKUP,
-   tanyakan data yang paling penting untuk melanjutkan diagnosis.
-   Jangan membuat kesimpulan pasti berdasarkan data yang belum cukup.
+7. JIKA INFORMASI BELUM CUKUP, tanyakan data yang paling penting.
 
 8. GUNAKAN BAHASA INDONESIA YANG MUDAH DIPAHAMI TEKNISI BENGKEL.
-   Boleh menggunakan istilah elektronik seperti VCC, B+, VGH, VGL, FB,
-   PWM, MOSFET, optocoupler, TL431, T-Con, COF, dan sebagainya.
 
-9. KESELAMATAN.
-   Jika pembahasan menyangkut tegangan tinggi, kapasitor primer,
-   flyback, atau bagian berbahaya lainnya, berikan peringatan keselamatan
-   yang relevan. Jangan memberikan peringatan panjang jika tidak diperlukan.
+9. KESELAMATAN. Peringatkan bahaya tegangan tinggi bila relevan.
 
 10. JAWAB LANGSUNG DAN FLEKSIBEL.
-    Jangan mengulang informasi yang tidak diperlukan.
-    Jika pertanyaan sederhana, jawab sederhana.
-    Jika masalah kompleks, lakukan analisis lebih mendalam.
-
-Tujuan utama kamu adalah menjadi partner berpikir seorang teknisi,
-bukan sekadar mesin pencari data atau pembaca datasheet. """
+"""
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -170,7 +143,7 @@ for msg in st.session_state.messages:
             st.markdown(msg["content"])
 
 # -----------------------------------------------------------------------------
-# 6. INPUT USER & SANITASI TEKS (KEAMANAN DARI EROR ASCII/WORD)
+# 6. INPUT USER & SANITASI TEKS
 # -----------------------------------------------------------------------------
 prompt_data = st.chat_input(
     "ketik keluhan kerusakan...",
@@ -183,34 +156,31 @@ if prompt_data:
     raw_prompt = prompt_data.text
     uploaded_files = prompt_data.files
 
-    # A. Saring & buang karakter non-ASCII tersembunyi (\u200e dll)
+    # A. Saring & buang karakter non-ASCII tersembunyi
     clean_prompt = raw_prompt.encode("ascii", errors="ignore").decode("ascii")
-
-    # B. Pembersihan ekstra dengan Regex untuk karakter formatting
     clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
 
-    # C. Jika setelah dibersihkan teks tidak kosong
-    if clean_prompt:
+    if clean_prompt or uploaded_files:
+        # Jika teks kosong tapi ada gambar, beri deskripsi default
+        display_text = clean_prompt if clean_prompt else "[Mengirim Gambar]"
+
         # Tampilkan pesan user
         with st.chat_message("user", avatar="👤"):
-            st.markdown(clean_prompt)
+            st.markdown(display_text)
 
-        st.session_state.messages.append({"role": "user", "content": clean_prompt})
+        st.session_state.messages.append({"role": "user", "content": display_text})
 
         # Proses jawaban AI
         with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("Menganalisis pertanyaan dan gambar..."):
                 try:
-                    # Salin riwayat chat untuk dikirim ke AI
                     messages_for_api = st.session_state.messages.copy()
 
-                    # Jika ada gambar, kirim gambar + pertanyaan
+                    # Jika ada gambar yang diupload
                     if uploaded_files:
                         uploaded_image = uploaded_files[0]
-
                         image_bytes = uploaded_image.getvalue()
                         image_base64 = base64.b64encode(image_bytes).decode("utf-8")
-
                         image_type = uploaded_image.type
 
                         messages_for_api[-1] = {
@@ -218,7 +188,7 @@ if prompt_data:
                             "content": [
                                 {
                                     "type": "text",
-                                    "text": clean_prompt
+                                    "text": display_text
                                 },
                                 {
                                     "type": "image_url",
