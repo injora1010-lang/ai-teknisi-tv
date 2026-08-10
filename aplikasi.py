@@ -182,7 +182,7 @@ if prompt_data:
      uploaded_files = prompt_data.files
 
     # A. Saring & buang karakter non-ASCII tersembunyi (\u200e dll)
-    clean_prompt = raw_prompt.encode('ascii', errors='ignore').decode('ascii')
+    clean_prompt = raw_prompt.encode("ascii", errors="ignore").decode("ascii")
     
     # B. Pembersihan ekstra dengan Regex untuk karakter formatting
     clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
