@@ -178,69 +178,70 @@ prompt_data = st.chat_input(
     file_type=["jpg", "jpeg", "png"],
     key="chat_input_main"
 )
+
 if prompt_data:
-   raw_prompt = prompt_data.text
-   uploaded_files = prompt_data.files
+    raw_prompt = prompt_data.text
+    uploaded_files = prompt_data.files
 
-   # A. Saring & buang karakter non-ASCII tersembunyi (\u200e dll)
-   clean_prompt = raw_prompt.encode("ascii", errors="ignore").decode("ascii")
- 
-   # B. Pembersihan ekstra dengan Regex untuk karakter formatting
-   clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
+    # A. Saring & buang karakter non-ASCII tersembunyi (\u200e dll)
+    clean_prompt = raw_prompt.encode("ascii", errors="ignore").decode("ascii")
 
-   # C. Jika setelah dibersihkan teks tidak kosong
-   if clean_prompt:
-       # Tampilkan pesan user
-       with st.chat_message("user", avatar="👤"):
-           st.markdown(clean_prompt)
- 
-           st.session_state.messages.append({"role": "user", "content": clean_prompt})
+    # B. Pembersihan ekstra dengan Regex untuk karakter formatting
+    clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
 
-           # Proses jawaban AI
-           with st.chat_message("assistant", avatar="🤖"):
-               with st.spinner("Menganalisis pertanyaan dan gambar..."):
-                   try:
-                       # Salin riwayat chat untuk dikirim ke AI
-                       messages_for_api = st.session_state.messages.copy()
+    # C. Jika setelah dibersihkan teks tidak kosong
+    if clean_prompt:
+        # Tampilkan pesan user
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(clean_prompt)
 
-                       # Jika ada gambar, kirim gambar + pertanyaan
-                       if uploaded_files:
-                          uploaded_image = uploaded_files[0]
+        st.session_state.messages.append({"role": "user", "content": clean_prompt})
 
-                          image_bytes = uploaded_image.getvalue()
-                          image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+        # Proses jawaban AI
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("Menganalisis pertanyaan dan gambar..."):
+                try:
+                    # Salin riwayat chat untuk dikirim ke AI
+                    messages_for_api = st.session_state.messages.copy()
 
-                          image_type = uploaded_image.type
+                    # Jika ada gambar, kirim gambar + pertanyaan
+                    if uploaded_files:
+                        uploaded_image = uploaded_files[0]
 
-                          messages_for_api[-1] = {
-                              "role": "user",
-                              "content": [
-                                   {
-                                     "type": "text",
-                                     "text": clean_prompt
-                                    },
-                                    {
-                                        "type": "image_url",
-                                        "image_url": {
+                        image_bytes = uploaded_image.getvalue()
+                        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+
+                        image_type = uploaded_image.type
+
+                        messages_for_api[-1] = {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": clean_prompt
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
                                         "url": f"data:{image_type};base64,{image_base64}"
-                                        }
-                                     }
-                               ]
-                           }
+                                    }
+                                }
+                            ]
+                        }
 
-                       response = client.chat.completions.create(
-                           model="gpt-4o-mini",
-                           messages=messages_for_api
-                       )
+                    response = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=messages_for_api
+                    )
 
-                       jawaban = response.choices[0].message.content
+                    jawaban = response.choices[0].message.content
 
-                       st.markdown(jawaban)
+                    st.markdown(jawaban)
 
-                       st.session_state.messages.append({
-                          "role": "assistant",
-                          "content": jawaban
-                       })
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": jawaban
+                    })
 
-                    except Exception as e:
-                        st.error(f"Terjadi kesalahan pada sistem: {e}")
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan pada sistem: {e}")
