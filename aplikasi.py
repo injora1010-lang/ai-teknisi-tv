@@ -140,7 +140,7 @@ for msg in st.session_state.messages:
         with st.chat_message(msg["role"], avatar=avatar_icon):
             # Tampilkan gambar jika ada di dalam riwayat pesan
             if "image" in msg and msg["image"]:
-                st.image(msg["image"], use_column_width=True)
+                st.image(msg["image"], use_container_width=True)
             st.markdown(msg["content"])
 
 # -----------------------------------------------------------------------------
@@ -175,7 +175,7 @@ if prompt_data:
         # C. Tampilkan pesan user di UI secara langsung
         with st.chat_message("user", avatar="👤"):
             if image_bytes_data:
-                st.image(image_bytes_data, use_column_width=True)
+                st.image(image_bytes_data, use_container_width=True)
             st.markdown(display_text)
 
         # D. Simpan ke session state (Teks + Gambar)
@@ -190,10 +190,7 @@ if prompt_data:
         with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("Menganalisis pertanyaan dan gambar..."):
                 try:
-                    # Susun payload pesan untuk OpenAI API
                     messages_for_api = []
-                    
-                    # Hitung batas hemat token (Maksimal 3 foto terakhir yang dikirim ulang)
                     total_messages = len(st.session_state.messages)
                     
                     for idx, msg in enumerate(st.session_state.messages):
@@ -202,7 +199,6 @@ if prompt_data:
                         elif msg["role"] == "assistant":
                             messages_for_api.append({"role": "assistant", "content": msg["content"]})
                         elif msg["role"] == "user":
-                            # Cek apakah pesan user punya gambar dan berada di dalam batas 3 foto terakhir
                             if msg.get("image") and (total_messages - idx <= 6):
                                 image_base64 = base64.b64encode(msg["image"]).decode("utf-8")
                                 messages_for_api.append({
