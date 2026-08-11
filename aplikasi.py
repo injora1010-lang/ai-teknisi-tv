@@ -54,7 +54,6 @@ except Exception:
     is_logged_in = False
 
 
-# Ambil data user jika login
 if is_logged_in:
 
     user_email = getattr(st.user, "email", None)
@@ -84,11 +83,7 @@ if "messages" not in st.session_state:
         }
     ]
 
-    # -------------------------------------------------------------------------
-    # Kalau LOGIN → ambil riwayat dari Supabase
-    # Kalau TIDAK LOGIN → jangan ambil riwayat
-    # -------------------------------------------------------------------------
-
+    # Kalau login → ambil riwayat dari Supabase
     if is_logged_in and user_email:
 
         try:
@@ -109,7 +104,7 @@ if "messages" not in st.session_state:
                     "content": record["content"]
                 })
 
-        except Exception as e:
+        except Exception:
 
             st.warning(
                 "Tidak dapat memuat riwayat chat dari server."
@@ -161,10 +156,6 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # -------------------------------------------------------------------------
-    # Tombol chat baru
-    # -------------------------------------------------------------------------
-
     if st.button(
         "🆕 Chat Baru",
         use_container_width=True
@@ -209,7 +200,7 @@ else:
 
 
 # =============================================================================
-# 9. TAMPILKAN RIWAYAT CHAT
+# 9. TAMPILKAN CHAT
 # =============================================================================
 
 for msg in st.session_state.messages:
@@ -249,9 +240,7 @@ prompt = st.chat_input(
 
 if prompt:
 
-    # -------------------------------------------------------------------------
     # Tampilkan pertanyaan user
-    # -------------------------------------------------------------------------
 
     with st.chat_message(
         "user",
@@ -261,26 +250,32 @@ if prompt:
         st.markdown(prompt)
 
     # Simpan ke session
+
     st.session_state.messages.append({
         "role": "user",
         "content": prompt
     })
 
 
-    # -------------------------------------------------------------------------
+    # =========================================================================
     # SIMPAN PERTANYAAN KE SUPABASE
-    # HANYA KALAU LOGIN
-    # -------------------------------------------------------------------------
+    # HANYA JIKA LOGIN
+    # =========================================================================
 
     if is_logged_in and user_email:
 
         try:
 
             supabase.table("chat_history").insert({
+
                 "session_id": user_email,
+
                 "user_email": user_email,
+
                 "role": "user",
+
                 "content": prompt
+
             }).execute()
 
         except Exception:
@@ -288,9 +283,9 @@ if prompt:
             pass
 
 
-    # -------------------------------------------------------------------------
+    # =========================================================================
     # KIRIM KE OPENAI
-    # -------------------------------------------------------------------------
+    # =========================================================================
 
     with st.chat_message(
         "assistant",
@@ -327,9 +322,7 @@ if prompt:
                 st.markdown(jawaban)
 
 
-                # -------------------------------------------------------------
                 # Simpan jawaban AI ke session
-                # -------------------------------------------------------------
 
                 st.session_state.messages.append({
                     "role": "assistant",
@@ -337,10 +330,10 @@ if prompt:
                 })
 
 
-                # -------------------------------------------------------------
+                # =========================================================================
                 # SIMPAN JAWABAN AI KE SUPABASE
-                # HANYA KALAU LOGIN
-                # -------------------------------------------------------------
+                # HANYA JIKA LOGIN
+                # =========================================================================
 
                 if is_logged_in and user_email:
 
