@@ -16,20 +16,23 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# 2. AUTENTIKASI GOOGLE USER (STREAMLIT NATIVE AUTH)
+# 2. AUTENTIKASI STREAMLIT USER
 # -----------------------------------------------------------------------------
-if not st.experimental_user.is_logged_in:
+# Penanganan aman untuk versi Streamlit baru maupun lama
+user_data = getattr(st, "user", None) or getattr(st, "experimental_user", None)
+
+if not user_data or not getattr(user_data, "is_logged_in", False):
     st.title("📺 AI Service TV Pro")
     st.subheader("Silakan Login Terlebih Dahulu")
     st.write("Login menggunakan akun Google untuk mengakses aplikasi dan menyimpan riwayat perbaikan Anda.")
     
     if st.button("🔑 Login dengan Google", type="primary"):
-        st.login()
+        st.login("google") if hasattr(st, "login") else st.login()
     st.stop()
 
 # Ambil informasi pengguna dari sesi login
-user_email = st.experimental_user.email
-user_name = getattr(st.experimental_user, "name", user_email.split("@")[0])
+user_email = user_data.email
+user_name = getattr(user_data, "name", user_email.split("@")[0])
 
 # -----------------------------------------------------------------------------
 # 3. KONEKSI SUPABASE & OPENAI
@@ -65,7 +68,7 @@ if "messages" not in st.session_state:
                 "content": record["content"]
             })
     except Exception as e:
-        st.error(f"Gagal memuat riwayat chat: {e}")
+        pass
 
 # -----------------------------------------------------------------------------
 # 5. HEADER & SIDEBAR BARU
@@ -96,7 +99,7 @@ if prompt:
     st.chat_message("user", avatar="👤").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # 1. Simpan Pertanyaan Pengguna ke Supabase
+    # Simpan Pertanyaan Pengguna ke Supabase
     try:
         supabase.table("chat_history").insert({
             "session_id": user_email,
@@ -104,10 +107,10 @@ if prompt:
             "role": "user",
             "content": prompt
         }).execute()
-    except Exception as e:
-        st.warning(f"Gagal menyimpan pesan pengguna ke database: {e}")
+    except Exception:
+        pass
 
-    # 2. Kirim Pertanyaan ke OpenAI API
+    # Kirim Pertanyaan ke OpenAI API
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("Menganalisis jenis kerusakan TV..."):
             try:
@@ -120,7 +123,7 @@ if prompt:
 
                 st.session_state.messages.append({"role": "assistant", "content": jawaban})
 
-                # 3. Simpan Respon AI ke Supabase
+                # Simpan Respon AI ke Supabase
                 supabase.table("chat_history").insert({
                     "session_id": user_email,
                     "user_email": user_email,
