@@ -1,11 +1,13 @@
 import re
 import os
 import base64
+import uuid
 import streamlit as st
 from openai import OpenAI
+from supabase import create_client, Client
 
 # -----------------------------------------------------------------------------
-# 1. KONFIGURASI HALAMAN & TAMPILAN (UI)
+# 1. KONFIGURASI HALAMAN
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="AI Service TV Pro - Asisten Teknisi",
@@ -14,24 +16,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Force environment encoding ke UTF-8
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 
-# Style CSS Kustom & Footer Professional
+# Style CSS Kustom & Footer
 st.markdown(
     """
     <style>
-    /* Sembunyikan elemen bawaan Streamlit */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     .stAppDeployButton {display:none;}
+    .block-container { padding-bottom: 90px; }
     
-    /* Atur padding bawah agar chat tidak tertutup footer */
-    .block-container {
-        padding-bottom: 90px;
-    }
-    
-    /* Footer Profesional & Sticky */
     .custom-footer {
         position: fixed;
         left: 0;
@@ -46,9 +41,7 @@ st.markdown(
         border-top: 1px solid #262730;
         z-index: 999;
     }
-    .custom-footer b {
-        color: #ffffff;
-    }
+    .custom-footer b { color: #ffffff; }
     </style>
     
     <div class="custom-footer">
@@ -62,89 +55,78 @@ st.title("📺 AI TEKNISI & SERVICE TV PRO")
 st.caption("Sistem Pakar Diagnosa Kerusakan TV LED, LCD, OLED, Plasma, & TV Tabung")
 
 # -----------------------------------------------------------------------------
-# 2. INISIALISASI OPENAI CLIENT
+# 2. INISIALISASI OPENAI & SUPABASE
 # -----------------------------------------------------------------------------
-api_key = st.secrets["OPENAI_API_KEY"]
-api_key = api_key.encode("ascii", errors="ignore").decode("ascii").strip()
-
+api_key = st.secrets["OPENAI_API_KEY"].encode("ascii", errors="ignore").decode("ascii").strip()
 client = OpenAI(api_key=api_key)
 
-# -----------------------------------------------------------------------------
-# 3. SYSTEM PROMPT (INSTRUKSI AI TEKNISI)
-# -----------------------------------------------------------------------------
+supabase_url = st.secrets["SUPABASE_URL"]
+supabase_key = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(supabase_url, supabase_key)
+
 SYSTEM_PROMPT = """
 Kamu adalah AI Asisten Senior Teknisi Elektronik dan Service TV Profesional.
-
 Tugas utama kamu adalah membantu teknisi memahami, menganalisis, dan memperbaiki
 TV LED, LCD, OLED, Plasma, TV Tabung, power supply, mainboard, T-Con,
 backlight, panel, serta rangkaian elektronik lainnya.
 
 ATURAN UTAMA:
-
 1. PAHAMI PERTANYAAN TERLEBIH DAHULU.
-   Jangan otomatis menganggap setiap pertanyaan sebagai kasus kerusakan.
-
-2. JAWAB SESUAI JENIS PERTANYAAN.
-   Jika pengguna bertanya teori, jelaskan teori.
-   Jika bertanya fungsi komponen, jelaskan fungsi dan cara kerjanya.
-   Jika bertanya datasheet, jelaskan berdasarkan spesifikasi komponen.
-   Jika bertanya tegangan, berikan nilai normal dan jelaskan titik ukurnya.
-   Jika bertanya troubleshooting, lakukan analisis langkah demi langkah.
-   Jika pengguna memberikan hasil pengukuran, analisis hasil pengukuran tersebut.
-   Jika pengguna mengirim foto board atau komponen, analisis bagian yang terlihat.
-   Jika pengguna hanya menyapa, jawab secara normal dan singkat.
-
-3. JANGAN MEMAKSA JAWABAN KE FORMAT TERTENTU.
-   Gunakan format analisis hanya jika memang sesuai dengan pertanyaan.
-
-4. BERPIKIR SEPERTI TEKNISI.
-   Hubungkan gejala, hasil pengukuran, fungsi rangkaian, dan kemungkinan penyebab.
-
-5. JIKA ADA DATA TEKNIS YANG DIBERIKAN PENGGUNA, gunakan data tersebut dalam analisis.
-
-6. JANGAN MENGARANG NILAI TEKNIS.
-
-7. JIKA INFORMASI BELUM CUKUP, tanyakan data yang paling penting.
-
-8. GUNAKAN BAHASA INDONESIA YANG MUDAH DIPAHAMI TEKNISI BENGKEL.
-
-9. KESELAMATAN. Peringatkan bahaya tegangan tinggi bila relevan.
-
-10. JAWAB LANGSUNG DAN FLEKSIBEL.
+2. JAWAB SESUAI JENIS PERTANYAAN DAN FLEKSIBEL.
+3. GUNAKAN BAHASA INDONESIA YANG MUDAH DIPAHAMI TEKNISI BENGKEL.
+4. PERHATIKAN KESELAMATAN (TEGANGAN TINGGI).
 """
 
+# Manajemen Session ID (Kunci riwayat pengguna)
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
+
+# Muat riwayat chat dari Supabase jika session_state masih kosong
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": SYSTEM_PROMPT}
-    ]
+    st.session_state.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    try:
+        response = supabase.table("chat_history")\
+            .select("*")\
+            .eq("session_id", st.session_state.session_id)\
+            .order("created_at", desc=False)\
+            .execute()
+        
+        for record in response.data:
+            msg_obj = {"role": record["role"], "content": record["content"]}
+            if record.get("image_url"):
+                # Decode string base64 kembali ke bytes
+                msg_obj["image"] = base64.b64decode(record["image_url"])
+            st.session_state.messages.append(msg_obj)
+    except Exception as e:
+        pass
 
 # -----------------------------------------------------------------------------
-# 4. SIDEBAR PENGATURAN
+# 3. SIDEBAR PENGATURAN
 # -----------------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ Panel Kontrol")
     st.write("Pengembang: **Rasmuhammad**")
-    st.write("Status Sistem: 🟢 **Aktif**")
+    st.write("Status Sistem: 🟢 **Aktif (Supabase Linked)**")
     st.markdown("---")
     
     if st.button("🗑️ Reset Sesi Diagnosa", use_container_width=True):
+        st.session_state.session_id = str(uuid.uuid4())
         st.session_state.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         st.rerun()
 
 # -----------------------------------------------------------------------------
-# 5. MERENDER RIWAYAT CHAT (DENGAN TAMPILAN GAMBAR)
+# 4. MERENDER RIWAYAT CHAT
 # -----------------------------------------------------------------------------
 for msg in st.session_state.messages:
     if msg["role"] != "system":
         avatar_icon = "👤" if msg["role"] == "user" else "🤖"
         with st.chat_message(msg["role"], avatar=avatar_icon):
-            # Tampilkan gambar jika ada di dalam riwayat pesan
             if "image" in msg and msg["image"]:
                 st.image(msg["image"], use_container_width=True)
             st.markdown(msg["content"])
 
 # -----------------------------------------------------------------------------
-# 6. INPUT USER & PROSES AI
+# 5. INPUT USER & PROSES AI
 # -----------------------------------------------------------------------------
 prompt_data = st.chat_input(
     "ketik keluhan kerusakan...",
@@ -157,7 +139,6 @@ if prompt_data:
     raw_prompt = prompt_data.text
     uploaded_files = prompt_data.files
 
-    # A. Sanitasi teks
     clean_prompt = raw_prompt.encode("ascii", errors="ignore").decode("ascii")
     clean_prompt = re.sub(r'[\u200b-\u200d\ufeff\u200e\u200f]', '', clean_prompt).strip()
 
@@ -165,20 +146,21 @@ if prompt_data:
         display_text = clean_prompt if clean_prompt else "[Mengirim Gambar]"
         image_bytes_data = None
         image_type = None
+        image_b64_str = None
 
-        # B. Olah gambar jika user mengunggah foto
         if uploaded_files:
             uploaded_image = uploaded_files[0]
             image_bytes_data = uploaded_image.getvalue()
             image_type = uploaded_image.type
+            image_b64_str = base64.b64encode(image_bytes_data).decode("utf-8")
 
-        # C. Tampilkan pesan user di UI secara langsung
+        # Tampilkan di UI
         with st.chat_message("user", avatar="👤"):
             if image_bytes_data:
                 st.image(image_bytes_data, use_container_width=True)
             st.markdown(display_text)
 
-        # D. Simpan ke session state (Teks + Gambar)
+        # Simpan ke session_state
         st.session_state.messages.append({
             "role": "user",
             "content": display_text,
@@ -186,9 +168,20 @@ if prompt_data:
             "image_type": image_type
         })
 
-        # E. Kirim ke AI & Tampilkan Jawaban
+        # Simpan pesan User ke Supabase
+        try:
+            supabase.table("chat_history").insert({
+                "session_id": st.session_state.session_id,
+                "role": "user",
+                "content": display_text,
+                "image_url": image_b64_str
+            }).execute()
+        except Exception:
+            pass
+
+        # Respon AI
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Menganalisis pertanyaan dan gambar..."):
+            with st.spinner("Menganalisis..."):
                 try:
                     messages_for_api = []
                     total_messages = len(st.session_state.messages)
@@ -228,6 +221,13 @@ if prompt_data:
                         "role": "assistant",
                         "content": jawaban
                     })
+
+                    # Simpan balasan AI ke Supabase
+                    supabase.table("chat_history").insert({
+                        "session_id": st.session_state.session_id,
+                        "role": "assistant",
+                        "content": jawaban
+                    }).execute()
 
                 except Exception as e:
                     st.error(f"Terjadi kesalahan pada sistem: {e}")
