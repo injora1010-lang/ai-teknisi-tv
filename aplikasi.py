@@ -16,7 +16,9 @@ st.set_page_config(
 # 2. OPENAI
 # =============================================================================
 
-api_key = st.secrets["OPENAI_API_KEY"].strip()
+# Membersihkan karakter non-ASCII / tersembunyi dari API Key
+raw_key = st.secrets["OPENAI_API_KEY"].strip()
+api_key = raw_key.encode("ascii", "ignore").decode("ascii")
 client = OpenAI(api_key=api_key)
 
 # =============================================================================
@@ -305,7 +307,7 @@ if prompt:
                     messages=[
                         {
                             "role": m["role"],
-                            "content": m["content"]
+                            "content": m["content"].encode("utf-8", "ignore").decode("utf-8")
                         }
 
                         for m in st.session_state.messages
